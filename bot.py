@@ -1,11 +1,11 @@
 import telebot
 import wikipedia
-# from telebot import apihelper
+from telebot import apihelper
                    
 TOKEN = '111111111:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
 # MAIN_URL = f'https://api.telegram.org/bot{TOKEN}'
 
-# telebot.apihelper.proxy = {'https': "https://94.130.98.54:8888"}
+apihelper.proxy = {'https': "https://1.1.1.1:8888"}
 # apihelper.proxy = {'https': "https://176.114.8.81:65233"}
 # bot = telebot.TeleBot(token=TOKEN)
 bot = telebot.TeleBot(TOKEN)
@@ -22,10 +22,15 @@ COMMAND_LIST = "/help - see help message\n" \
                  '/command_list - see command list\n'\
                  '/info - see full info about bot\n'\
                  '/author - see author info\n'\
-                 '/summary or /s - see summary of wikipedia article\n'\
                  '/article_url or /u - see url of Wikipedia article\n'\
                  '/chat_id - see chat_id\n'\
-                 '/storage - see titels that are in storage at this moment'
+                 '/storage - see titels that are in storage at this moment\n'\
+                 '/language - set language\n'\
+                 '/pop_storage - pop title from storage'
+
+lan_str = 'languages: '
+for i in dict(wikipedia.languages()).keys():
+    lan_str += str(i) + ": " + str(dict(wikipedia.languages())[i]) + '; '
 
 @bot.message_handler(commands=['help'])
 def answer(message):
@@ -64,34 +69,28 @@ def send_author(message):
 
 @bot.message_handler(commands=['storage'])
 def send_author(message):
+    s = 'titels:'
+    for i in d.keys():
+        s += ' ' + str(i)
     bot.send_message(
         chat_id=message.chat.id,
-        text=d.keys()
+        text=s
+    )
+
+@bot.message_handler(commands=['pop_storage'])
+def send_author(message):
+    title = ''.join(message.text.split(" ")[1:])
+    if title in d.keys():
+        d.pop(title)
+        text = 'success'
+    else:
+        text = 'this title is not in storage'
+    bot.send_message(
+        chat_id=message.chat.id,
+        text=text
     )
     
 # @bot.message_handler(commands=['summary', 's'])
-@bot.message_handler()
-def send_summary(message):
-#     print('summary text')
-#     title = ''.join(message.text.split(" ")[1:])
-    title = message.text
-#     if title == '_ubivca':
-#         bot.stop_polling()
-    try:
-        summary = wikipedia.summary(title=title)
-        d[title] = summary
-    except:
-        if title in d.keys():
-            summary = d[title]
-            summary = 'In Wikipedia there is not any pages with title "%s"' % title + \
-                    ' but summary of this article is in bot storage\n%s' % summary
-        else:
-            summary = 'In Wikipedia there is not any pages with title %s' % title
-    bot.send_message(
-        chat_id=message.chat.id,
-        text = summary
-    )
-
     
     
 @bot.message_handler(commands=['chat_id'])
@@ -110,8 +109,79 @@ def send_welcome(message):
         url = page.url
     except:
         url = 'In Wikipedia there is not any pages with title %s' % title
-    bot.reply_to(message, text=url)
+    bot.send_message(
+        chat_id=message.chat.id,
+        text=url
+    )
+    
+@bot.message_handler(commands=['language'])
+def send_welcome(message):
+    title = ''.join(message.text.split(" ")[1:])
+    if title in wikipedia.languages():
+        wikipedia.set_lang(title)
+        bot.send_message(
+            chat_id=message.chat.id,
+            text='set up %s language'%title
+        )
+    else:
+#         bot.send_message(
+#             chat_id=message.chat.id,
+#             text=str('1' + lan_str)
+#         )
+        bot.send_message(
+            chat_id=message.chat.id,
+#             text=str('wrong language flag "%s" use on of %s'%(str(title)),lan_str)
+#             text=str('wrong language flag "%s" use on of %s'%('1','lan_str'))
+            text=str('wrong language flag')
+        )
+#         bot.send_message(
+#             chat_id=message.chat.id,
+#             text=str(wikipedia.languages())
+#         )
+
+@bot.message_handler()
+def send_summary(message):
+#     print('summary text')
+#     title = ''.join(message.text.split(" ")[1:])
+    title = message.text
+#     if title == '_ubivca':
+#         bot.stop_polling()
+#     bot.send_message(
+#         chat_id=message.chat.id,
+#         text = title
+#     )
+    try:
+        summary = wikipedia.summary(title=title)
+        d[title] = summary
+#         bot.send_message(
+#             chat_id=message.chat.id,
+#             text = summary
+#         )
+    except:
+        if title in d.keys():
+            summary = d[title]
+#             bot.send_message(
+#                 chat_id=message.chat.id,
+#                 text = summary
+#             )
+            summary = 'In Wikipedia there is not any pages with title "%s"' % title + \
+                    ' but summary of this article is in bot storage\n%s' % summary
+#             bot.send_message(
+#                 chat_id=message.chat.id,
+#                 text = summary
+#             )
+        else:
+            summary = 'In Wikipedia there is not any pages with title %s' % title
+#             bot.send_message(
+#                 chat_id=message.chat.id,
+#                 text = '3'
+#             )
+    bot.send_message(
+        chat_id=message.chat.id,
+        text = summary
+    )
+
 
 # bot.get_me()
 # bot.send_message(chat_id=284239137, text='hi')
-bot.polling(interval=15)
+bot.polling(none_stop=True)
